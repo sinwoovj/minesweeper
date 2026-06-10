@@ -8,21 +8,42 @@ public class ButtonManager : MonoBehaviour
     private Color selectedColor = Color.gray;
     private Color defaultColor = Color.white;
 
-    public void ActiveUI(GameObject obj, bool isActive)
+    public GameObject activeObj0;
+    public GameObject activeObj1;
+    public GameObject activeObj2;
+    public GameObject activeObj3;
+    public List<GameObject> selectBtns = new List<GameObject>();
+    public GameObject selectBtn;
+    public string sceneName;
+    public void ActiveUI0(bool isActive)
     {
-        obj.SetActive(isActive);
+        activeObj0.SetActive(isActive);
+    }
+    
+    public void ActiveUI1(bool isActive)
+    {
+        activeObj1.SetActive(isActive);
+    }
+    
+    public void ActiveUI2(bool isActive)
+    {
+        activeObj2.SetActive(isActive);
+    }
+    
+    public void ActiveUI3(bool isActive)
+    {
+        activeObj3.SetActive(isActive);
     }
 
-    public void SelectUI(List<Button> objs, Button obj)
+    public void SelectUI()
     {
-        foreach (Button o in objs)
+        foreach (GameObject o in selectBtns)
         {
-            o.Select();
-            //o.Equals(obj) ? true : false
+            o.GetComponent<Image>().color = o.Equals(selectBtn) ? selectedColor : defaultColor;
         }
     }
 
-    public void MoveScene(string sceneName)
+    public void MoveScene()
     {
         SceneManager.LoadScene(sceneName);
     }
