@@ -17,26 +17,31 @@ public class ButtonManager : MonoBehaviour
     public string sceneName;
     public void ActiveUI0(bool isActive)
     {
+        ButtonSound();
         activeObj0.SetActive(isActive);
     }
     
     public void ActiveUI1(bool isActive)
     {
+        ButtonSound();
         activeObj1.SetActive(isActive);
     }
     
     public void ActiveUI2(bool isActive)
     {
+        ButtonSound();
         activeObj2.SetActive(isActive);
     }
     
     public void ActiveUI3(bool isActive)
     {
+        ButtonSound();
         activeObj3.SetActive(isActive);
     }
 
     public void SelectUI()
     {
+        ButtonSound();
         foreach (GameObject o in selectBtns)
         {
             o.GetComponent<Image>().color = o.Equals(selectBtn) ? selectedColor : defaultColor;
@@ -45,6 +50,7 @@ public class ButtonManager : MonoBehaviour
 
     public void MoveScene()
     {
+        ButtonSound();
         FadeManager.Instance.LoadSceneWithFade(sceneName);
     }
 
@@ -59,6 +65,12 @@ public class ButtonManager : MonoBehaviour
 
     public void Rematch()
     {
-        
+        ButtonSound();
+
+    }
+
+    void ButtonSound()
+    {
+        SoundManager.Instance.PlayButtonSFX();
     }
 }
