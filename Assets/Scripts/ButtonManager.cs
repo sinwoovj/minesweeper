@@ -56,4 +56,9 @@ public class ButtonManager : MonoBehaviour
         Application.Quit();
 #endif
     }
+
+    public void Rematch()
+    {
+        
+    }
 }
