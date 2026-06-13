@@ -45,7 +45,7 @@ public class ButtonManager : MonoBehaviour
 
     public void MoveScene()
     {
-        SceneManager.LoadScene(sceneName);
+        FadeManager.Instance.LoadSceneWithFade(sceneName);
     }
 
     public void GameExit()
