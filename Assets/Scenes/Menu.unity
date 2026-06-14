@@ -11741,6 +11741,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 301a10142e3760d478420a63da81591b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SoundManager
+  buttonAudioClip: {fileID: 8300000, guid: 6b974979b3e952a4b8adf26682e1495f, type: 3}
   bgmSource: {fileID: 1713247407}
   sfxSource: {fileID: 1713247406}
 --- !u!4 &1713247409

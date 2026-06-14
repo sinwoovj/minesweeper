@@ -66,7 +66,7 @@ public class ButtonManager : MonoBehaviour
     public void Rematch()
     {
         ButtonSound();
-
+        GameManager.Instance.RestartGame();
     }
 
     void ButtonSound()

@@ -8,9 +8,12 @@ public class PlayerManager : MonoBehaviour
     public string playerName = "player 1";
     public const int playerCharacterCount = 2;
     public int playerCharacter = 0; // 0 : male, 1 : female
-    public int currentHealth = 3;
-    public int maxHealth = 3;
-    public int playerScore = 0;
+    [Header("플레이어 상태")]
+    public int maxLives = 2; // 최대 목숨 개수
+    public int maxItem = 1;
+    private int currentItem;
+    private int currentLives;
+    public float progress; // 0~1;
 
     private void Awake()
     {
@@ -27,28 +30,51 @@ public class PlayerManager : MonoBehaviour
         }
     }
 
-    // --- 아래부터는 플레이어 관련 기능 예시입니다 ---
-
-    public void AddScore(int points)
+    public void GameStart()
     {
-        playerScore += points;
-        Debug.Log($"점수 획득! 현재 점수: {playerScore}");
+        // 게임 시작 시 목숨 꽉 채우기
+        currentLives = maxLives;
+        currentItem = maxItem;
+        // 시작할 때 UI 업데이트 (초기화)
+        UIManager.Instance.UpdateLivesUI(currentLives);
     }
 
-    public void TakeDamage(int damage)
+    public void LoseLife()
     {
-        currentHealth -= damage;
-        Debug.Log($"플레이어 피격! 남은 체력: {currentHealth}");
+        --currentLives;
+        currentLives = Mathf.Max(currentLives, 0); // 0 밑으로 떨어지지 않게 고정
+        // 목숨이 남았다면 부활 연출이나 무적 시간 등 추가
+        Debug.Log($"앗! 맞았다. 남은 목숨: {currentLives}");
+        // UI에 남은 목숨 반영
+        UIManager.Instance.UpdateLivesUI(currentLives);
+    }
+    
+    public void RecoveryLife()
+    {
+        ++currentLives;
+        UIManager.Instance.UpdateLivesUI(currentLives);
+    }
 
-        if (currentHealth <= 0)
+    public bool UsableItem() => currentItem > 0;
+
+    public void GetItem()
+    {
+        currentItem--;
+    }
+
+    /// <summary>
+    /// 아이템을 사용했을 때 (연출 확인용)
+    /// </summary>
+    public void UseItem(int num)
+    {
+        switch(num)
         {
-            Die();
+            case 0:  // 회복 아이템
+                RecoveryLife();
+                SFXManager.Instance.PlayRecoverySFX();
+                break;
         }
+        UIManager.Instance.TriggerItemUseEffect();
     }
-
-    private void Die()
-    {
-        Debug.Log("플레이어 사망 처리!");
-        // 여기에 게임 오버 처리나 리스폰 로직을 추가하세요.
-    }
+    public int CurrentLives => currentLives;
 }

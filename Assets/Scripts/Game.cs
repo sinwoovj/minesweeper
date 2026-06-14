@@ -12,7 +12,11 @@ public class Game : MonoBehaviour
     private CellGrid grid;
     private bool gameover;
     private bool generated;
-
+    public bool isMine;
+    public bool isPuase;
+    private bool isWin = false;
+    private float currentProgress = 0f;
+    private PlayerManager pm;
     private void OnValidate()
     {
         mineCount = Mathf.Clamp(mineCount, 0, width * height);
@@ -22,21 +26,24 @@ public class Game : MonoBehaviour
     {
         Application.targetFrameRate = 60;
         board = GetComponentInChildren<Board>();
+        pm = PlayerManager.Instance;
     }
 
-    private void Start()
-    {
-        NewGame();
-    }
-
-    private void NewGame()
+    public void NewGame()
     {
         StopAllCoroutines();
 
         Camera.main.transform.position = new Vector3(width / 2f, height / 2f, -10f);
 
+        GameManager.Instance.revealTiles = 0;
+        GameManager.Instance.rightFlags = 0;
+        GameManager.Instance.explodeCount = 0;
+
+        currentProgress = 0f;
+
         gameover = false;
         generated = false;
+        isPuase = false;
 
         grid = new CellGrid(width, height);
         board.Draw(grid);
@@ -44,13 +51,8 @@ public class Game : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.N) || Input.GetKeyDown(KeyCode.R) || Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space))
-        {
-            NewGame();
-            return;
-        }
 
-        if (!gameover)
+        if (!gameover && isMine && !isPuase && GameManager.Instance.currentState == GameManager.GameState.Playing)
         {
             if (Input.GetMouseButtonDown(0)) {
                 Reveal();
@@ -60,6 +62,22 @@ public class Game : MonoBehaviour
                 Chord();
             } else if (Input.GetMouseButtonUp(2)) {
                 Unchord();
+            }
+        }
+        if (gameover)
+        {
+            GameManager.Instance.EndGame(isWin);
+        }
+    }
+
+    private void CalculateRightFlags()
+    {
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                if (grid[x, y].flagged && grid[x,y].exploded)
+                    GameManager.Instance.rightFlags++;
             }
         }
     }
@@ -97,11 +115,36 @@ public class Game : MonoBehaviour
 
             default:
                 cell.revealed = true;
+                GameManager.Instance.revealTiles++;
+                SFXManager.Instance.PlayRevealSFX();
                 CheckWinCondition();
                 break;
         }
 
         board.Draw(grid);
+
+        UpdateProgress();
+    }
+
+    private void UpdateProgress()
+    {
+        float revealCount = 0;
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                if (grid[x, y].revealed)
+                    revealCount++;
+            }
+        }
+        currentProgress = revealCount / ((width * height) - mineCount);
+        UIManager.Instance.SliderProgressUI(currentProgress);
+        if (PlayerManager.Instance.UsableItem() && currentProgress >= 0.5f)
+        {
+            PlayerManager.Instance.GetItem();
+            UIManager.Instance.ActiveItemUI();
+            SFXManager.Instance.PlayGetItemSFX();
+        }
     }
 
     private IEnumerator Flood(Cell cell)
@@ -111,6 +154,10 @@ public class Game : MonoBehaviour
         if (cell.type == Cell.Type.Mine) yield break;
 
         cell.revealed = true;
+        GameManager.Instance.revealTiles++;
+
+        UpdateProgress();
+        SFXManager.Instance.PlayRevealSFX();
         board.Draw(grid);
 
         yield return null;
@@ -138,6 +185,8 @@ public class Game : MonoBehaviour
         if (cell.revealed) return;
 
         cell.flagged = !cell.flagged;
+
+        UpdateProgress();
         board.Draw(grid);
     }
 
@@ -221,21 +270,37 @@ public class Game : MonoBehaviour
 
     private void Explode(Cell cell)
     {
-        gameover = true;
-
-        // Set the mine as exploded
-        cell.exploded = true;
-        cell.revealed = true;
-
-        // Reveal all other mines
-        for (int x = 0; x < width; x++)
+        GameManager.Instance.explodeCount++;
+        if (pm.CurrentLives > 1)
         {
-            for (int y = 0; y < height; y++)
-            {
-                cell = grid[x, y];
+            cell.exploded = true;
+            cell.revealed = true;
+            // 폭발 소리 추가
+            SFXManager.Instance.PlayExplodeSFX();
+            pm.LoseLife();
+        }
+        else
+        {
+            CalculateRightFlags();
+            gameover = true;
+            isWin = false;
+            // Set the mine as exploded
+            cell.exploded = true;
+            cell.revealed = true;
 
-                if (cell.type == Cell.Type.Mine) {
-                    cell.revealed = true;
+            // Reveal all other mines
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    cell = grid[x, y];
+
+                    if (cell.type == Cell.Type.Mine)
+                    {
+                        // 폭발 소리 추가
+
+                        cell.revealed = true;
+                    }
                 }
             }
         }
@@ -243,19 +308,11 @@ public class Game : MonoBehaviour
 
     private void CheckWinCondition()
     {
-        for (int x = 0; x < width; x++)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                Cell cell = grid[x, y];
-
-                // All non-mine cells must be revealed to have won
-                if (cell.type != Cell.Type.Mine && !cell.revealed) {
-                    return; // no win
-                }
-            }
+        if (currentProgress < 1f) {
+            return; // no win
         }
-
+        isWin = true;
+        CalculateRightFlags();
         gameover = true;
 
         // Flag all the mines
